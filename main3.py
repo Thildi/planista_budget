@@ -18,15 +18,18 @@ dark_blue_color = "#3bc4cf"
 green_color = "#D9EDBF"
 red_color = "#FFB996"
 dark_orange_color = "#FFCF81"
+pink_color = "#F7B5CA"
+purple_color = "#AC87C5"
+yellow_color = "#F9F3CC"
 
 color_list = [orange_color, dark_orange_color, blue_color, dark_color,
-              dark_blue_color, green_color, red_color, paper_color]
-
+              dark_blue_color, green_color, red_color, pink_color,
+              purple_color, yellow_color,
+              ]
 
 current_date = date.today().strftime("%d.%m.%Y")
 current_month = date.today().month
 current_year = date.today().year
-# print(current_month)
 
 cat_dict = {}
 
@@ -340,7 +343,7 @@ def open_stats_window():
     search_button.grid(row=3, column=1, padx=20, pady=30)
 
     total_purchases = tk.Label(master=gui_frame_2, text=f"Total purchases: {len(overall_stats_df)}\n"
-                                                        f"Total cost: {overall_sum}", font=bold_font, bg="white")
+                                                        f"Total cost: {overall_sum} EUR", font=bold_font, bg="white")
     total_purchases.grid(row=7, column=1, padx=20, pady=20)
 
     start_shop_sums = overall_stats_df.groupby("shop")["price"].sum()
