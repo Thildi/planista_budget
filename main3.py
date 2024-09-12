@@ -44,20 +44,17 @@ shop_list = ["Penny", "Famila", "Aldi", "Growshop",
 
 month_list = [f"0{month}" if month < 10 else str(month) for month in range(1, 13)]
 
-# print(month_list)
 price_per_cat = []
 found_cat = []
 
 dataframe = pandas.read_csv("haushaltsbuch_data.csv")
 dataframe["date"] = pandas.to_datetime(dataframe["date"], format="%d.%m.%Y")
 
-# Bad Stuff
-
 current_month_df = dataframe[dataframe["date"].dt.month == current_month]
 last_month_df = dataframe[dataframe["date"].dt.month == current_month - 1]
 
 category_sums = current_month_df.groupby("category")["price"].sum()
-# print(f"category sums: {category_sums}")
+
 bad_stuff_list = []
 bad_stuff_values = []
 
@@ -83,10 +80,8 @@ if tobacco_sum:
 
 for cat in category_list:
     cat_df = dataframe[dataframe["category"] == cat.lower()]
-    # print(cat_df)
     cat_sum = cat_df["price"].sum()
     cat_dict[cat] = cat_sum
-# print(cat_dict)
 
 try:
     last_entry_df = dataframe.iloc[-1]
@@ -99,18 +94,21 @@ except IndexError:
     last_entry_price = ""
     last_entry_date = ""
 
-# total_sum = sum(dataframe["price"])
-# print(summe)
-
 
 def update_last_entry():
     temp_df = pandas.read_csv("haushaltsbuch_data.csv")
-    last_item = temp_df.iloc[-1]
+    try:
+        last_item = temp_df.iloc[-1]
+    except IndexError:
+        pass
 
-    last_entry_text.config(text=f"Your last entry: "
-                                f"{last_item['item'].title()} - "
-                                f"{last_item['price']} EUR - "
-                                f"{last_item['date']}")
+    try:
+        last_entry_text.config(text=f"Your last entry: "
+                                    f"{last_item['item'].title()} - "
+                                    f"{last_item['price']} EUR - "
+                                    f"{last_item['date']}")
+    except UnboundLocalError:
+        pass
 
 
 def entry_klick(event):
@@ -176,18 +174,14 @@ def open_stats_window():
 
         entries_year = search_df[search_df["date"].dt.year == chosen_year]
 
-        entries_category = search_df[search_df["category"] == chosen_cat]
-
         entries_month_cat = search_df[(search_df["date"].dt.month == chosen_month) &
                                       (search_df["date"].dt.year == chosen_year) &
                                       (search_df["category"] == chosen_cat.lower())]
 
         for cat in category_list:
             cat_df = search_df[search_df["category"] == cat.lower()]
-            # print(cat_df)
             cat_sum = cat_df["price"].sum()
             cat_dict[cat] = cat_sum
-        # print(cat_dict)
 
         total_sum_per_month = sum(entries_month["price"])
         total_sum_per_year = sum(entries_year["price"])
@@ -198,9 +192,7 @@ def open_stats_window():
             if chosen_month > 0:
                 total_purchases.config(text=f"Total purchases: {len(entries_month)}\n"
                                             f"Total cost: {round(total_sum_per_month, 2)} EUR")
-                # total_cost.config(text=f"Total cost: {round(total_sum_per_month, 2)} EUR")
 
-                # stats_header.config(text=f"Your stats for \n{chosen_month}/{chosen_year}")
                 shop_sums = entries_month.groupby("shop")["price"].sum()
                 cat_sums = entries_month.groupby("category")["price"].sum()
 
@@ -208,10 +200,9 @@ def open_stats_window():
                 chart_frame.grid(row=8, column=0)
 
                 fig, ax = plt.subplots(figsize=(4, 3))
-                # fig.tight_layout(pad=1.0)
+
                 if open_charts:
                     ax.set_aspect('equal')
-                    # fig.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
                     ax.pie(shop_sums.values, labels=shop_sums.index, autopct="%1.1f%%", colors=color_list)
                     ax.set_title(f"Shops for {chosen_month}/{chosen_year}")
                 else:
@@ -219,17 +210,16 @@ def open_stats_window():
 
                 canvas = FigureCanvasTkAgg(fig, master=chart_frame)
                 canvas.draw()
-                # canvas.get_tk_widget().pack(side=tk.LEFT)
                 canvas.get_tk_widget().grid(row=8, column=0)
 
                 chart_frame_2 = tk.Frame(gui_frame_2)
                 chart_frame_2.grid(row=8, column=2)
 
                 fig2, ax2 = plt.subplots(figsize=(4, 3))
-                # fig2.tight_layout(pad=1.0)
+
                 if open_charts:
                     ax2.set_aspect('equal')
-                    # fig2.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
+
                     ax2.pie(cat_sums.values, labels=cat_sums.index, autopct="%1.1f%%", colors=color_list)
                     ax2.set_title(f"Categories for {chosen_month}/{chosen_year}")
                 else:
@@ -237,27 +227,23 @@ def open_stats_window():
 
                 canvas_2 = FigureCanvasTkAgg(fig2, master=chart_frame_2)
                 canvas_2.draw()
-                # canvas_2.get_tk_widget().pack(side=tk.LEFT)
                 canvas_2.get_tk_widget().grid(row=8, column=2)
 
             # wenn kein Monat gewaehlt wurde
             else:
                 total_purchases.config(text=f"Total purchases: {len(entries_year)}\n"
                                             f"Total cost: {round(total_sum_per_year, 2)} EUR")
-                # total_cost.config(text=f"Total cost: {round(total_sum_per_year, 2)} EUR")
 
                 chart_frame = tk.Frame(gui_frame_2)
                 chart_frame.grid(row=8, column=0)
 
-                # stats_header.config(text=f"Your stats for \n{chosen_year}")
                 shop_sums = entries_year.groupby("shop")["price"].sum()
                 cat_sums = entries_year.groupby("category")["price"].sum()
 
                 fig, ax = plt.subplots(figsize=(4, 3))
-                # fig.tight_layout(pad=1.0)
+
                 if open_charts:
                     ax.set_aspect('equal')
-                    # fig.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
                     ax.pie(shop_sums.values, labels=shop_sums.index, autopct="%1.1f%%", colors=color_list)
                     ax.set_title(f"Shops for {chosen_year}")
                 else:
@@ -265,17 +251,15 @@ def open_stats_window():
 
                 canvas = FigureCanvasTkAgg(fig, master=gui_frame_2)
                 canvas.draw()
-                # canvas.get_tk_widget().pack(side=tk.LEFT)
                 canvas.get_tk_widget().grid(row=8, column=0)
 
                 chart_frame_2 = tk.Frame(gui_frame_2)
                 chart_frame_2.grid(row=8, column=2)
 
                 fig2, ax2 = plt.subplots(figsize=(4, 3))
-                # fig2.tight_layout(pad=1.0)
+
                 if open_charts:
                     ax2.set_aspect('equal')
-                    # fig2.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
                     ax2.pie(cat_sums.values, labels=cat_sums.index, autopct="%1.1f%%", colors=color_list)
                     ax2.set_title(f"Category for {chosen_year}")
                 else:
@@ -283,17 +267,18 @@ def open_stats_window():
 
                 canvas_2 = FigureCanvasTkAgg(fig2, master=gui_frame_2)
                 canvas_2.draw()
-                # canvas_2.get_tk_widget().pack(side=tk.LEFT)
                 canvas_2.get_tk_widget().grid(row=8, column=2)
         # wenn Kategorie gewaehlt wurde
         else:
-            # open_charts = False
-            # gui_frame_2.update()
             cat_df = search_df[search_df["category"] == chosen_cat]
             cat_df_month = cat_df[(cat_df["date"].dt.month == chosen_month) & (cat_df["date"].dt.year == chosen_year)]
             cat_df_year = cat_df[cat_df["date"].dt.year == chosen_year]
 
-            chosen_cat_text = tk.Label(master=gui_frame_2, text=f"Expenditures for {chosen_cat.title()}:", font=("calibri", 16, "bold"), bg="white")
+            chosen_cat_text = tk.Label(master=gui_frame_2,
+                                       text=f"Expenditures for {chosen_cat.title()}:",
+                                       font=("calibri", 16, "bold"),
+                                       bg="white"
+                                       )
             chosen_cat_text.grid(row=4, column=1, pady=10)
             # wenn Kategorie und Monat gewaehlt wurden
             if chosen_month > 0:
@@ -301,19 +286,15 @@ def open_stats_window():
 
                 total_purchases.config(text=f"Total purchases: {len(cat_df_month)}\nTotal cost: {sum(cat_sums)} EUR",
                                        font=bold_font)
-                # total_cost.config(text=f"Total cost: {sum(cat_sums)} EUR")
 
             # wenn Kategorie aber kein Monat gewaehlt wurde
             else:
-                # stats_header.config(text=f"Your stats for {chosen_cat.title()} in {chosen_year}:")
                 cat_sums = cat_df_year.groupby("category")["price"].sum()
                 total_purchases.config(text=f"Total purchases: {len(cat_df_year)}\nTotal cost: {sum(cat_sums)} EUR",
                                        font=bold_font)
-                # total_cost.config(text=f"Total cost: {sum(cat_sums)} EUR")
 
     stats_window = tk.Toplevel(main_window)
     stats_window.minsize(900, 800)
-    # stats_window.geometry("900x600")
     stats_window.config(bg="white")
     stats_window.title("PLANISTA Statistics")
 
@@ -369,32 +350,26 @@ def open_stats_window():
     start_frame.grid(row=8, column=0)
 
     fig, ax = plt.subplots(figsize=(4, 3))
-    # fig.tight_layout(pad=1.0)
 
     ax.set_aspect('equal')
-    # fig.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
     ax.pie(start_shop_sums.values, labels=start_shop_sums.index, autopct="%1.1f%%", colors=color_list)
     ax.set_title("Overall Shops")
 
     canvas = FigureCanvasTkAgg(fig, master=gui_frame_2)
     canvas.draw()
-    # canvas.get_tk_widget().pack(side=tk.LEFT)
     canvas.get_tk_widget().grid(row=8, column=0)
 
     start_frame_2 = tk.Frame(gui_frame_2)
     start_frame_2.grid(row=8, column=2)
 
     fig2, ax2 = plt.subplots(figsize=(4, 3))
-    # fig2.tight_layout(pad=1.0)
 
     ax2.set_aspect('equal')
-    # fig2.subplots_adjust(left=0.0, right=0.9, top=0.9, bottom=0.1)
     ax2.pie(start_cat_sums.values, labels=start_cat_sums.index, autopct="%1.1f%%", colors=color_list)
     ax2.set_title("Overall Categories")
 
     canvas_2 = FigureCanvasTkAgg(fig2, master=gui_frame_2)
     canvas_2.draw()
-    # canvas_2.get_tk_widget().pack(side=tk.LEFT)
     canvas_2.get_tk_widget().grid(row=8, column=2)
 
 
@@ -402,7 +377,6 @@ def open_stats_window():
 
 main_window = tk.Tk()
 main_window.minsize(750, 500)
-# main_window.geometry("750x900")
 main_window.config(bg="white")
 main_window.title("PLANISTA")
 
@@ -412,9 +386,6 @@ gui_frame.config(bg="white")
 
 image = Image.open("logo.png")
 logo = ImageTk.PhotoImage(image)
-
-# image_2 = Image.open("save_button.png")
-# save_icon = ImageTk.PhotoImage(image_2)
 
 selected_category = tk.StringVar()
 selected_category.set("---")
@@ -440,14 +411,22 @@ shop_text.grid(row=1, column=3)
 date_text = tk.Label(master=gui_frame, text="Date (dd.mm.yyyy)", font=font, bg="white")
 date_text.grid(row=1, column=7)
 
-last_entry_text = tk.Label(master=gui_frame,
-                           text=f"Your last entry: {last_entry_item.title()} - "
-                           f"{last_entry_price} EUR - "
-                           f"{last_entry_date}",
-                           font=font,
-                           bg="white"
-                           )
-last_entry_text.grid(row=4, column=2, columnspan=3)
+if last_entry_item:
+    last_entry_text = tk.Label(master=gui_frame,
+                               text=f"Your last entry: {last_entry_item.title()} - "
+                               f"{last_entry_price} EUR - "
+                               f"{last_entry_date}",
+                               font=font,
+                               bg="white"
+                               )
+    last_entry_text.grid(row=4, column=2, columnspan=3)
+else:
+    last_entry_text = tk.Label(master=gui_frame,
+                               text="",
+                               font=font,
+                               bg="white"
+                               )
+    last_entry_text.grid(row=4, column=2, columnspan=3)
 
 item_entry = tk.Entry(master=gui_frame, justify="right", font=font, bg=paper_color)
 item_entry.grid(row=2, column=1, padx=10)
@@ -494,10 +473,12 @@ this_years_sum = this_year_df.groupby("shop")["price"].sum()
 
 fig, ax = plt.subplots(figsize=(5, 4))
 
-ax.pie(bad_stuff_values, labels=bad_stuff_list, colors=color_list, autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
-ax.set_title(f"The bad stuff in {current_month}/{current_year}")
-# ax.bar(bad_stuff_list, bad_stuff_values, color=color_list)
-# ax.set_title(f"The bad stuff in {current_month}/{current_year}")
+if bad_stuff_list:
+    ax.pie(bad_stuff_values, labels=bad_stuff_list, colors=color_list, autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
+    ax.set_title(f"The bad stuff in {current_month}/{current_year}")
+else:
+    ax.pie(bad_stuff_values, labels=bad_stuff_list, colors=color_list, autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
+    ax.set_title("")
 
 canvas = FigureCanvasTkAgg(fig, master=chart_frame)
 canvas.draw()
