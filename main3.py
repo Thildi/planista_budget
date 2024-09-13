@@ -69,10 +69,10 @@ if alc_sum:
     bad_stuff_values.append(alc_sum)
     bad_stuff_list.append("Alkohol")
 
-restaurant_sum = category_sums.get("restaurant", 0)
-if restaurant_sum:
-    bad_stuff_values.append(restaurant_sum)
-    bad_stuff_list.append("Restaurant")
+# restaurant_sum = category_sums.get("restaurant", 0)
+# if restaurant_sum:
+#     bad_stuff_values.append(restaurant_sum)
+#     bad_stuff_list.append("Restaurant")
 
 gambling_sum = category_sums.get("gluecksspiel", 0)
 if gambling_sum:
@@ -104,19 +104,22 @@ except IndexError:
 
 def update_last_entry():
     """ updates the last item bought """
-    temp_df = pandas.read_csv("planista_database.csv")
     try:
-        last_item = temp_df.iloc[-1]
-    except IndexError:
-        pass
+        temp_df = pandas.read_csv("planista_database.csv")
 
-    try:
+        if temp_df.empty:
+            last_entry_text.config(text="No entries found")
+            return
+
+        last_item = temp_df.iloc[-1]
+
         last_entry_text.config(text=f"Your last entry: "
                                     f"{last_item['item'].title()} - "
-                                    f"{last_item['price']} EUR - "
+                                    f"{last_item['price']:.2f} EUR - "
                                     f"{last_item['date']}")
-    except UnboundLocalError:
-        pass
+
+    except (KeyError, IndexError, FileNotFoundError) as e:
+        last_entry_text.config(text=f"Error: {str(e)}")
 
 
 def entry_klick(event):
@@ -233,7 +236,7 @@ def open_stats_window():
             # wenn Monat gewaehlt wurde
             if chosen_month > 0:
                 total_purchases.config(text=f"Total purchases: {len(entries_month)}\n"
-                                            f"Total cost: {round(total_sum_per_month, 2)} EUR")
+                                            f"Total cost: {round(total_sum_per_month, 2):.2f} EUR")
 
                 text_label(gui_frame_2, label_to_remove, 0, chosen_month, chosen_year)
 
@@ -270,7 +273,7 @@ def open_stats_window():
             # wenn kein Monat gewaehlt wurde
             else:
                 total_purchases.config(text=f"Total purchases: {len(entries_year)}\n"
-                                            f"Total cost: {round(total_sum_per_year, 2)} EUR")
+                                            f"Total cost: {round(total_sum_per_year, 2):.2f} EUR")
 
                 text_label(gui_frame_2, label_to_remove, 0, 0, chosen_year)
 
@@ -312,7 +315,7 @@ def open_stats_window():
             if chosen_month > 0:
                 cat_sums = entries_month_cat.groupby("category")["price"].sum()
 
-                total_purchases.config(text=f"Total purchases: {len(cat_df_month)}\nTotal cost: {sum(cat_sums)} EUR",
+                total_purchases.config(text=f"Total purchases: {len(cat_df_month)}\nTotal cost: {sum(cat_sums):.2f} EUR",
                                        font=bold_font)
 
                 text_label(gui_frame_2, label_to_remove, chosen_cat.title(), chosen_month, current_year)
@@ -320,7 +323,7 @@ def open_stats_window():
             # wenn Kategorie aber kein Monat gewaehlt wurde
             else:
                 cat_sums = cat_df_year.groupby("category")["price"].sum()
-                total_purchases.config(text=f"Total purchases: {len(cat_df_year)}\nTotal cost: {sum(cat_sums)} EUR",
+                total_purchases.config(text=f"Total purchases: {len(cat_df_year)}\nTotal cost: {sum(cat_sums):.2f} EUR",
                                        font=bold_font)
 
                 text_label(gui_frame_2, label_to_remove, chosen_cat.title(), 0, current_year)
@@ -389,7 +392,7 @@ def open_stats_window():
 
     total_purchases = tk.Label(master=gui_frame_2,
                                text=f"Total purchases: {len(overall_stats_df)}\n"
-                                    f"Total cost: {overall_sum} EUR",
+                                    f"Total cost: {overall_sum :.2f} EUR",
                                font=bold_font,
                                bg="white"
                                )
@@ -463,10 +466,14 @@ shop_text.grid(row=1, column=3)
 date_text = tk.Label(master=gui_frame, text="Date (dd.mm.yyyy)", font=font, bg="white")
 date_text.grid(row=1, column=7)
 
+last_entry_string = ""
+if len(str(last_entry_price).split(".")[1]) == 1:
+    last_entry_string = f"{last_entry_price}0"
+print(last_entry_string)
 if last_entry_item:
     last_entry_text = tk.Label(master=gui_frame,
                                text=f"Your last entry: {last_entry_item.title()} - "
-                               f"{last_entry_price} EUR - "
+                               f"{last_entry_string} EUR - "
                                f"{last_entry_date}",
                                font=font,
                                bg="white"
@@ -529,8 +536,6 @@ chart_frame.grid(row=6, column=0, padx=20)
 this_year_df = dataframe[dataframe["date"].dt.year == current_year]
 this_years_sum = this_year_df.groupby("shop")["price"].sum()
 
-# create_bad_stuff_chart(main_window)
-
 fig, ax = plt.subplots(figsize=(5, 4))
 
 if bad_stuff_list:
@@ -538,7 +543,7 @@ if bad_stuff_list:
            labels=bad_stuff_list,
            colors=color_list,
            autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
-    ax.set_title(f"The bad stuff in {current_month}/{current_year}")
+    ax.set_title(f"Hall of Shame {current_month}/{current_year}")
 else:
     ax.pie(bad_stuff_values,
            labels=bad_stuff_list,
