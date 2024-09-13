@@ -4,22 +4,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from datetime import date
 from PIL import Image, ImageTk
-from bad_stuff_chart import create_bad_stuff_chart
+from text_label import text_label
 
-# import sys
-# import os
-#
-# if getattr(sys, 'frozen', False):
-#     # Wenn als .exe gebündelt
-#     application_path = sys._MEIPASS
-# else:
-#     # Während der Entwicklung
-#     application_path = os.path.dirname(os.path.abspath(__file__))
-#
-# csv_path = os.path.join(application_path, 'planista_database.csv')
 
-font = ("Calibri", 14)
-bold_font = ("Calibri", 16, "bold")
+font = ("open sans", 15)
+bold_font = ("open sans", 18, "bold")
 
 paper_color = "#fbfbfb"
 orange_color = "#fcd9a8"
@@ -112,56 +101,6 @@ except IndexError:
     last_entry_date = ""
 
 
-def update_chart():
-
-    update_df = pandas.read_csv("planista_database.csv")
-    internal_curr_mo_df = update_df[update_df["date"].dt.month == current_month]
-    cat_sums = internal_curr_mo_df.groupby("category")["price"].sum()
-    update_df['date'] = pandas.to_datetime(update_df['date'], errors='coerce')
-
-    alc_sum = cat_sums.get("alkohol", 0)
-    if alc_sum:
-        bad_stuff_values.append(alc_sum)
-        bad_stuff_list.append("Alkohol")
-
-    restaurant_sum = cat_sums.get("restaurant", 0)
-    if restaurant_sum:
-        bad_stuff_values.append(restaurant_sum)
-        bad_stuff_list.append("Restaurant")
-
-    gambling_sum = cat_sums.get("gluecksspiel", 0)
-    if gambling_sum:
-        bad_stuff_values.append(gambling_sum)
-        bad_stuff_list.append("Gluecksspiel")
-
-    tobacco_sum = cat_sums.get("tabakwaren", 0)
-    if tobacco_sum:
-        bad_stuff_values.append(tobacco_sum)
-        bad_stuff_list.append("Tabakwaren")
-
-    chart_frame = tk.Frame(main_window)
-    chart_frame.grid(row=6, column=0, padx=20)
-
-    fig, ax = plt.subplots(figsize=(5, 4))
-
-    if bad_stuff_list:
-        ax.pie(bad_stuff_values,
-               labels=bad_stuff_list,
-               colors=color_list,
-               autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
-        ax.set_title(f"The bad stuff in {current_month}/{current_year}")
-    else:
-        ax.pie(bad_stuff_values,
-               labels=bad_stuff_list,
-               colors=color_list,
-               autopct=lambda p: f'{p * sum(bad_stuff_values) / 100 :.0f} EUR')
-        ax.set_title("")
-
-    canvas = FigureCanvasTkAgg(fig, master=chart_frame)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.LEFT)
-
-
 def update_last_entry():
     temp_df = pandas.read_csv("planista_database.csv")
     try:
@@ -226,14 +165,12 @@ def open_stats_window():
         for label in label_to_remove:
             label.config(text="")
 
-        current_year_text.config(text="")
-
         total_purchases.config(text=f"Total purchases:\n"
                                     f"Total cost:")
 
         new_cat_text = tk.Label(master=gui_frame_2,
                                    text=f"",
-                                   font=("calibri", 16, "bold"),
+                                   font=("open sans", 16, "bold"),
                                    bg="white"
                                    )
         new_cat_text.grid(row=4, column=1, pady=10)
@@ -245,8 +182,6 @@ def open_stats_window():
 
     def search_stats():
         global cat_dict, label_to_remove
-
-        current_year_text.config(text="")
         
         search_df = pandas.read_csv("planista_database.csv")
 
@@ -283,13 +218,7 @@ def open_stats_window():
                 total_purchases.config(text=f"Total purchases: {len(entries_month)}\n"
                                             f"Total cost: {round(total_sum_per_month, 2)} EUR")
 
-                chosen_moye_text = tk.Label(master=gui_frame_2,
-                                            text=f"Money spend in:\n{chosen_month}/{chosen_year}",
-                                            font=("calibri", 16, "bold"),
-                                            bg="white"
-                                            )
-                chosen_moye_text.grid(row=4, column=1, pady=10)
-                label_to_remove.append(chosen_moye_text)
+                text_label(gui_frame_2, label_to_remove, 0, chosen_month, chosen_year)
 
                 shop_sums = entries_month.groupby("shop")["price"].sum()
                 cat_sums = entries_month.groupby("category")["price"].sum()
@@ -326,13 +255,7 @@ def open_stats_window():
                 total_purchases.config(text=f"Total purchases: {len(entries_year)}\n"
                                             f"Total cost: {round(total_sum_per_year, 2)} EUR")
 
-                chosen_year_text = tk.Label(master=gui_frame_2,
-                                            text=f"Money spend in:\n{chosen_year}",
-                                            font=("calibri", 16, "bold"),
-                                            bg="white"
-                                            )
-                chosen_year_text.grid(row=4, column=1, pady=10)
-                label_to_remove.append(chosen_year_text)
+                text_label(gui_frame_2, label_to_remove, 0, 0, chosen_year)
 
                 chart_frame = tk.Frame(gui_frame_2)
                 chart_frame.grid(row=8, column=0)
@@ -368,13 +291,6 @@ def open_stats_window():
             cat_df_month = cat_df[(cat_df["date"].dt.month == chosen_month) & (cat_df["date"].dt.year == chosen_year)]
             cat_df_year = cat_df[cat_df["date"].dt.year == chosen_year]
 
-            chosen_cat_text = tk.Label(master=gui_frame_2,
-                                       text=f"Money spend on:\n{chosen_cat.title()}",
-                                       font=("calibri", 16, "bold"),
-                                       bg="white"
-                                       )
-            chosen_cat_text.grid(row=4, column=1, pady=10)
-            label_to_remove.append(chosen_cat_text)
             # wenn Kategorie und Monat gewaehlt wurden
             if chosen_month > 0:
                 cat_sums = entries_month_cat.groupby("category")["price"].sum()
@@ -382,11 +298,15 @@ def open_stats_window():
                 total_purchases.config(text=f"Total purchases: {len(cat_df_month)}\nTotal cost: {sum(cat_sums)} EUR",
                                        font=bold_font)
 
+                text_label(gui_frame_2, label_to_remove, chosen_cat.title(), chosen_month, current_year)
+
             # wenn Kategorie aber kein Monat gewaehlt wurde
             else:
                 cat_sums = cat_df_year.groupby("category")["price"].sum()
                 total_purchases.config(text=f"Total purchases: {len(cat_df_year)}\nTotal cost: {sum(cat_sums)} EUR",
                                        font=bold_font)
+
+                text_label(gui_frame_2, label_to_remove, chosen_cat.title(), 0, current_year)
 
     stats_window = tk.Toplevel(main_window)
     stats_window.minsize(900, 800)
@@ -411,32 +331,33 @@ def open_stats_window():
     cat_text = tk.Label(master=gui_frame_2, text="Category", font=font, bg="white")
     cat_text.grid(row=1, column=2, pady=20)
 
-    current_year_text = tk.Label(master=gui_frame_2,
-                                text=f"Money spend in:\n{current_year}",
-                                font=("calibri", 16, "bold"),
-                                bg="white"
-                                )
-    current_year_text.grid(row=4, column=1, pady=10)
+    text_label(gui_frame_2, label_to_remove, 0, 0, current_year)
 
     month_menu = tk.OptionMenu(gui_frame_2, selected_month, *month_list)
-    month_menu.config(bg=orange_color, font=font)
+    month_menu.config(bg=orange_color, font=font, width=2)
     month_menu.grid(row=2, column=0, padx=20)
 
-    year_entry = tk.Entry(master=gui_frame_2, justify="right", font=font, fg="#d3d3d3", bg=paper_color)
+    menu_1 = gui_frame_2.nametowidget(month_menu.menuname)
+    menu_1.config(font=("open sans", 13))
+
+    year_entry = tk.Entry(master=gui_frame_2, justify="right", font=("open sans", 15), fg="#d3d3d3", bg=paper_color)
     year_entry.grid(row=2, column=1)
     year_entry.insert(0, str(current_year))
     year_entry.config(fg="#d3d3d3")
     year_entry.bind("<Button-1>", clear_year)
 
-    choose_cat = tk.OptionMenu(gui_frame_2, selected_cat_stats, *category_list)
-    choose_cat.config(bg=orange_color, width=15, font=font)
-    choose_cat.grid(row=2, column=2, padx=30)
+    category_menu = tk.OptionMenu(gui_frame_2, selected_cat_stats, *category_list)
+    category_menu.config(bg=orange_color, width=15, font=font)
+    category_menu.grid(row=2, column=2, padx=30)
+
+    menu_2 = gui_frame_2.nametowidget(category_menu.menuname)
+    menu_2.config(font=("open sans", 13))
 
     search_button = tk.Button(master=gui_frame_2,
                               text="Search",
                               font=font,
                               command=search_stats,
-                              bg=dark_color,
+                              bg=blue_color,
                               width=10
                               )
     search_button.grid(row=3, column=1, padx=20, pady=30)
@@ -456,7 +377,7 @@ def open_stats_window():
                                font=bold_font,
                                bg="white"
                                )
-    total_purchases.grid(row=7, column=1, padx=20, pady=20)
+    total_purchases.grid(row=8, column=1, padx=20, pady=20)
 
     start_shop_sums = overall_stats_df.groupby("shop")["price"].sum()
     start_cat_sums = overall_stats_df.groupby("category")["price"].sum()
@@ -514,7 +435,7 @@ logo_label.grid(row=0, column=2, columnspan=3, pady=20)
 item_text = tk.Label(master=gui_frame, text="Item", font=font, bg="white")
 item_text.grid(row=1, column=1)
 
-cost_text = tk.Label(master=gui_frame, text="Cost", font=font, bg="white")
+cost_text = tk.Label(master=gui_frame, text="Cost", font=("open sans", 14), bg="white")
 cost_text.grid(row=1, column=2)
 
 category_text = tk.Label(master=gui_frame, text="Category", font=font, bg="white")
@@ -546,10 +467,10 @@ else:
 item_entry = tk.Entry(master=gui_frame, justify="right", font=font, bg=paper_color)
 item_entry.grid(row=2, column=1, padx=10)
 
-cost_entry = tk.Entry(master=gui_frame, justify="right", font=font, bg=paper_color)
+cost_entry = tk.Entry(master=gui_frame, justify="right", font=("courier", 20), bg=paper_color, width=8)
 cost_entry.grid(row=2, column=2)
 
-date_entry = tk.Entry(master=gui_frame, font=font, fg="#d3d3d3", justify="right", bg=paper_color)
+date_entry = tk.Entry(master=gui_frame, font=("courier", 15), justify="right", bg=paper_color, width=14)
 date_entry.grid(row=2, column=7, padx=10)
 date_entry.insert(1, current_date)
 date_entry.bind("<Button-1>", entry_klick)
@@ -558,7 +479,7 @@ save_button = tk.Button(master=gui_frame,
                         text="SAVE",
                         font=font,
                         command=save_data,
-                        bg=dark_color,
+                        bg=green_color,
                         width=20,
                         )
 save_button.grid(row=3, column=2, padx=20, pady=40, columnspan=3)
@@ -567,18 +488,24 @@ stats_button = tk.Button(master=gui_frame,
                          text="Statistics",
                          font=font,
                          command=open_stats_window,
-                         bg=dark_color,
+                         bg=blue_color,
                          width=25,
                          )
 stats_button.grid(row=5, column=2, pady=50, columnspan=3)
 
 drop_down_cat = tk.OptionMenu(gui_frame, selected_category, *category_list)
-drop_down_cat.config(bg=orange_color, font=font)
+drop_down_cat.config(bg=orange_color, font=font, width=6)
 drop_down_cat.grid(row=2, column=4)
 
+menu_3 = gui_frame.nametowidget(drop_down_cat.menuname)
+menu_3.config(font=font)
+
 drop_down_shop = tk.OptionMenu(gui_frame, selected_shop, *shop_list)
-drop_down_shop.config(bg=orange_color, font=font)
+drop_down_shop.config(bg=orange_color, font=font, width=6)
 drop_down_shop.grid(row=2, column=3, padx=10)
+
+menu_4 = gui_frame.nametowidget(drop_down_shop.menuname)
+menu_4.config(font=font)
 
 chart_frame = tk.Frame(main_window)
 chart_frame.grid(row=6, column=0, padx=20)
