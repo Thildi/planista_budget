@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import pandas
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
@@ -102,6 +103,7 @@ except IndexError:
 
 
 def update_last_entry():
+    """ updates the last item bought """
     temp_df = pandas.read_csv("planista_database.csv")
     try:
         last_item = temp_df.iloc[-1]
@@ -118,16 +120,28 @@ def update_last_entry():
 
 
 def entry_klick(event):
+    """ clears the entry-widget when clicking on it"""
     date_entry.delete(0, tk.END)
     date_entry.config(fg="black")
 
 
 def save_data():
+    """ saves the data put in """
     item = item_entry.get().lower()
     price = cost_entry.get().lower().replace(",", ".")
     category = selected_category.get().lower()
     shop = selected_shop.get().lower()
     curr_date = date_entry.get()
+
+    if not item or not price or not category or not shop:
+        messagebox.showerror("error", "All fields must be filled")
+        return
+
+    try:
+        price = float(price)
+    except ValueError:
+        messagebox.showerror("error", "The price is not right")
+        return
 
     new_data = pandas.DataFrame({"item": [item],
                                  "shop": [shop],
@@ -152,6 +166,7 @@ def save_data():
 
 
 def open_stats_window():
+    """ opens the statistics window and creates several widgets"""
     global cat_dict
 
     overall_stats_df = pandas.read_csv("planista_database.csv")
@@ -177,10 +192,12 @@ def open_stats_window():
         label_to_remove.append(new_cat_text)
 
     def clear_year(event):
+        """ clears the year entry widget """
         year_entry.delete(0, tk.END)
         year_entry.config(fg="black")
 
     def search_stats():
+
         global cat_dict, label_to_remove
         
         search_df = pandas.read_csv("planista_database.csv")
@@ -340,10 +357,9 @@ def open_stats_window():
     menu_1 = gui_frame_2.nametowidget(month_menu.menuname)
     menu_1.config(font=("open sans", 13))
 
-    year_entry = tk.Entry(master=gui_frame_2, justify="right", font=("open sans", 15), fg="#d3d3d3", bg=paper_color)
+    year_entry = tk.Entry(master=gui_frame_2, justify="right", font=("courier", 16), bg=paper_color)
     year_entry.grid(row=2, column=1)
     year_entry.insert(0, str(current_year))
-    year_entry.config(fg="#d3d3d3")
     year_entry.bind("<Button-1>", clear_year)
 
     category_menu = tk.OptionMenu(gui_frame_2, selected_cat_stats, *category_list)
